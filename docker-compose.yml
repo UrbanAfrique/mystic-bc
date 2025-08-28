@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: mystig_db
+      MYSQL_USER: mystig_user
+      MYSQL_PASSWORD: mystig_pass
+      MYSQL_TCP_PORT: 3306  # Add this line
+    ports:
+      - "3306:3306"
+    restart: always
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    container_name: mystig-backend
+    depends_on:
+      mysql:
+        condition: service_healthy  # Wait for MySQL to be healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://sql.freedb.tech:3306/freedb_mystic-travel?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: freedb_marone
+      SPRING_DATASOURCE_PASSWORD: MFzvTMNdRQF%8w&
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update  # Changed from create to update
+      SPRING_JPA_SHOW_SQL: "true"
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQLDialect
+      SERVER_PORT: 8080
+      JWT_SECRET: e3c7f95a1b4d42c4bda2f8b8a6435c1b9d8363e29f7a4f88a2d0c1f6fbb79314
+      JWT_EXPIRATION: 3600000
+      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK: INFO
+      LOGGING_LEVEL_COM_MYSTIG_BACKEND: DEBUG
+      SPRING_WEB_CORS_ALLOW_CREDENTIALS: "true"
+      SPRING_WEB_CORS_ALLOWED_ORIGINS: http://localhost:3000
+      SPRING_WEB_CORS_ALLOWED_METHODS: GET,POST,PUT,DELETE,OPTIONS
+      SPRING_WEB_CORS_ALLOWED_HEADERS: Authorization,Content-Type
+      APP_DEFAULT_LANGUAGE: en
+      APP_DEFAULT_CURRENCY: MAD
+      # Mail configuration
+      SPRING_MAIL_HOST: sandbox.smtp.mailtrap.io
+      SPRING_MAIL_PORT: 2525
+      SPRING_MAIL_USERNAME: c84e32fa972996
+      SPRING_MAIL_PASSWORD: 92096eafa67492
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: true
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: true
+    ports:
+      - "8080:8080"
+    restart: always
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: root
+    ports:
+      - "8081:80"
+    depends_on:
+      - mysql
+    restart: always
